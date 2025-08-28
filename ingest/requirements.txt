@@ -1,0 +1,6 @@
+osmnx==2.0.6
+networkx==3.3
+numpy==1.26.4
+psycopg2-binary==2.9.9
+shapely==2.0.4
+pandas==2.2.2

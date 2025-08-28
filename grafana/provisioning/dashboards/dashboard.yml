@@ -1,0 +1,10 @@
+apiVersion: 1
+
+providers:
+  - name: 'Route Experiment Dashboards'
+    folder: 'Route Experiment'
+    type: file
+    options:
+      path: /etc/grafana/provisioning/dashboards
+    disableDeletion: false
+    updateIntervalSeconds: 10

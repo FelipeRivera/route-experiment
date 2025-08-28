@@ -1,0 +1,130 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: re_postgres
+    environment:
+      POSTGRES_DB: routes
+      POSTGRES_USER: routeuser
+      POSTGRES_PASSWORD: routepass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U routeuser -d routes"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: re_redis
+    ports:
+      - "6379:6379"
+
+  # Route engine instances (A/B) to demonstrate load balancing
+  route_engine_a:
+    build:
+      context: ./route_engine
+    container_name: re_route_engine_a
+    environment:
+      - FLASK_ENV=production
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=routes
+      - DB_USER=routeuser
+      - DB_PASSWORD=routepass
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - DEFAULT_CITY=bogota
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    ports:
+      - "5001:5000"
+
+  route_engine_b:
+    build:
+      context: ./route_engine
+    container_name: re_route_engine_b
+    environment:
+      - FLASK_ENV=production
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=routes
+      - DB_USER=routeuser
+      - DB_PASSWORD=routepass
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - DEFAULT_CITY=bogota
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    ports:
+      - "5002:5000"
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: re_nginx
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "8080:80"
+    depends_on:
+      - route_engine_a
+      - route_engine_b
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: re_prometheus
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    depends_on:
+      - route_engine_a
+      - route_engine_b
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: re_grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+
+  # One-shot loader that populates the DB with Bogotá data
+  ingest_bogota:
+    build:
+      context: ./ingest
+    container_name: re_ingest_bogota
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=routes
+      - DB_USER=routeuser
+      - DB_PASSWORD=routepass
+      - CITY=bogota
+      - PLACE_NAME=Bogotá, Colombia
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+volumes:
+  postgres_data:
+  grafana_data:
+  prometheus_data:

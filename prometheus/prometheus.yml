@@ -1,0 +1,11 @@
+global:
+  scrape_interval: 5s
+
+scrape_configs:
+  - job_name: 'route_engine'
+    static_configs:
+      - targets: ['route_engine_a:5000', 'route_engine_b:5000']
+        labels:
+          group: 'route'
+
+  # You can add more exporters here (redis, postgres, nginx exporters), if needed
