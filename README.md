@@ -85,17 +85,8 @@ Run:
 hey -z 2m -c 100 -m POST -T 'application/json' -d @req.json http://localhost:8080/route
 ```
 
-Track **P95** on Grafana (panel: *P95 Route Duration*). Your pass criteria is *p95 ≤ 3s*.
-
 ## Importing other cities / custom areas
 
 - Update the env vars of the `ingest_bogota` service in `docker-compose.yml`:
   - `CITY=medellin`, `PLACE_NAME=Medellín, Colombia`, etc.
 - Or add an additional ingest service per city. The route engine loads any city by name.
-
-See the citations in the main instructions for **Geofabrik**, **Overpass Turbo**, and **OSMnx** for alternate data prep paths.
-
-## Notes
-
-- This is a lean demo (no PostGIS needed). For production-grade spatial queries or map matching, enable PostGIS.
-- Nginx upstreams are set to two fixed instances. To add more engines, duplicate the service and upstream entries.
