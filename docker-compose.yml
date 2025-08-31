@@ -124,6 +124,20 @@ services:
         condition: service_healthy
     restart: "no"
 
+  locust:
+    image: locustio/locust:2.31.6
+    depends_on:
+      - nginx
+    volumes:
+      - ./tests:/mnt/locust
+    environment:
+      - BASE_URL=http://nginx
+      - CITY=bogota
+      - DEADLINE_MS=3000
+    ports:
+      - "8089:8089"
+    command: -f /mnt/locust/locustfile.py -H http://nginx
+
 volumes:
   postgres_data:
   grafana_data:
