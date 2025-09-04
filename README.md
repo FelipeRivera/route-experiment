@@ -41,6 +41,7 @@ curl -s http://localhost:8080/route -H 'Content-Type: application/json' -d '{
 
 - Prometheus: http://localhost:9090
 - Grafana: http://localhost:3000 (user: admin / pass: admin)
+- Locust: http://localhost:8089
   - Dashboard: **Route Experiment** ➜ includes request rate, duration P95, and A* expanded nodes.
 
 ## What the flags do
@@ -90,3 +91,21 @@ hey -z 2m -c 100 -m POST -T 'application/json' -d @req.json http://localhost:808
 - Update the env vars of the `ingest_bogota` service in `docker-compose.yml`:
   - `CITY=medellin`, `PLACE_NAME=Medellín, Colombia`, etc.
 - Or add an additional ingest service per city. The route engine loads any city by name.
+
+## Docker compose up
+```bash
+docker compose build --no-cache
+docker compose up -d
+docker logs -f re_ingest_bogota
+```
+
+## Docker compose down
+```bash
+docker compose down -v --remove-orphans --rmi local
+docker builder prune -af
+```
+
+## Start locust
+```bash
+docker compose up -d locust
+```
